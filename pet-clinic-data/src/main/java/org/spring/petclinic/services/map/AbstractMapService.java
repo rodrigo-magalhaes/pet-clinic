@@ -1,15 +1,13 @@
 package org.spring.petclinic.services.map;
 
+import org.spring.petclinic.model.BaseEntity;
 import org.spring.petclinic.services.CrudRepository;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
-public abstract class AbstractMapService<T, ID> implements CrudRepository<T, ID> {
+public abstract class AbstractMapService<T extends BaseEntity, ID extends Long> implements CrudRepository<T, ID> {
 
-    protected Map<ID, T> map = new HashMap<>();
+    protected Map<Long, T> map = new HashMap<>();
 
     @Override
     public Set<T> findAll() {
@@ -21,8 +19,16 @@ public abstract class AbstractMapService<T, ID> implements CrudRepository<T, ID>
         return map.get(id);
     }
 
-    public T save(ID id, T t) {
-        return map.put(id, t);
+    public T save(T t) {
+        if(t != null){
+            if(t.getId() == null){
+                t.setId(getNextId());
+            }
+            map.put(t.getId(), t);
+        } else {
+            throw new RuntimeException("Object cannot be null");
+        }
+        return t;
     }
 
     @Override
@@ -34,5 +40,15 @@ public abstract class AbstractMapService<T, ID> implements CrudRepository<T, ID>
     public void delete(T t) {
         map.entrySet()
             .removeIf(entry->entry.getValue().equals(t));
+    }
+
+    private Long getNextId() {
+        Long nextId = null;
+        try{
+            nextId = Collections.max(map.keySet()) + 1;
+        } catch (NoSuchElementException e) {
+            nextId = 1L;
+        }
+        return nextId;
     }
 }
